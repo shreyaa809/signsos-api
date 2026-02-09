@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SignSOS App</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#dc2626">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SignSOS">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
 
   <style>
     * {
@@ -13,11 +21,15 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       background: #020617;
-      font-family: "Segoe UI", system-ui, sans-serif;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
       color: white;
-      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -26,7 +38,7 @@
     .app {
       width: 100%;
       max-width: 430px;
-      height: 100vh;
+      height: 100%;
       background: #0f172a;
       display: flex;
       flex-direction: column;
@@ -36,20 +48,14 @@
     .app-header {
       background: #020617;
       padding: 16px;
+      padding-top: max(16px, env(safe-area-inset-top));
       text-align: center;
       border-bottom: 1px solid #1e293b;
       position: relative;
     }
 
-    .app-header h1 {
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    .app-header span {
-      font-size: 12px;
-      color: #94a3b8;
-    }
+    .app-header h1 { font-size: 20px; font-weight: 600; }
+    .app-header > span { font-size: 12px; color: #94a3b8; }
 
     .location-badge {
       position: absolute;
@@ -73,17 +79,9 @@
       border: 1px solid #334155;
     }
 
-    .server-online {
-      background: #064e3b;
-      color: #6ee7b7;
-      border-color: #10b981;
-    }
-
-    .server-offline {
-      background: #7f1d1d;
-      color: #fca5a5;
-      border-color: #dc2626;
-    }
+    .server-online { background: #064e3b; color: #6ee7b7; border-color: #10b981; }
+    .server-offline { background: #7f1d1d; color: #fca5a5; border-color: #dc2626; }
+    .server-checking { background: #78350f; color: #fcd34d; border-color: #f59e0b; }
 
     .emergency-list {
       background: #1e293b;
@@ -93,16 +91,8 @@
       border-bottom: 2px solid #020617;
     }
 
-    .emergency-item {
-      text-align: center;
-      font-size: 12px;
-    }
-
-    .emergency-item strong {
-      display: block;
-      font-size: 16px;
-      margin-top: 2px;
-    }
+    .emergency-item { text-align: center; font-size: 12px; }
+    .emergency-item strong { display: block; font-size: 16px; margin-top: 2px; }
 
     .camera-view {
       flex: 1;
@@ -111,9 +101,8 @@
       align-items: center;
       justify-content: center;
       position: relative;
-      border-top: 2px solid #1e293b;
-      border-bottom: 2px solid #1e293b;
       overflow: hidden;
+      min-height: 200px;
     }
 
     video#camera {
@@ -125,10 +114,8 @@
 
     #overlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       transform: scaleX(-1);
     }
 
@@ -136,29 +123,21 @@
       background: #1e293b;
       padding: 14px;
       font-size: 14px;
-      min-height: 80px;
+      min-height: 70px;
     }
 
-    .status h3 {
-      font-size: 15px;
-      margin-bottom: 6px;
-      color: #10b981;
-    }
+    .status h3 { font-size: 15px; margin-bottom: 6px; color: #10b981; }
+    .status p { color: #e5e7eb; font-weight: 500; line-height: 1.4; }
 
-    .status p {
-      color: #e5e7eb;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-
-    .status .emergency-detected {
+    .emergency-detected {
       color: #fbbf24;
       font-weight: bold;
       font-size: 16px;
     }
 
     .bottom-action {
-      padding: 16px;
+      padding: 12px 16px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
       background: #020617;
     }
 
@@ -172,29 +151,16 @@
       font-weight: bold;
       color: white;
       cursor: pointer;
-      transition: background 0.2s;
     }
 
-    .call-btn:active {
-      background: #b91c1c;
-    }
+    .call-btn:active { background: #b91c1c; }
+    .call-btn:disabled { background: #64748b; cursor: not-allowed; }
 
-    .call-btn:disabled {
-      background: #64748b;
-      cursor: not-allowed;
-    }
-
-    .note {
-      text-align: center;
-      margin-top: 6px;
-      font-size: 11px;
-      color: #fca5a5;
-    }
+    .note { text-align: center; margin-top: 6px; font-size: 11px; color: #fca5a5; }
 
     .debug-info {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 10px; left: 10px;
       background: rgba(0,0,0,0.7);
       padding: 8px;
       font-size: 10px;
@@ -204,12 +170,48 @@
       line-height: 1.4;
     }
 
+    /* Install Banner */
+    .install-banner {
+      display: none;
+      background: linear-gradient(135deg, #1e40af, #7c3aed);
+      padding: 12px 16px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .install-banner.show { display: flex; }
+
+    .install-banner-text { font-size: 13px; flex: 1; }
+    .install-banner-text strong { display: block; font-size: 14px; }
+
+    .install-btn {
+      background: white;
+      color: #1e40af;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .install-dismiss {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* Modal */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.85);
       display: none;
       align-items: center;
@@ -217,9 +219,7 @@
       z-index: 1000;
     }
 
-    .modal-overlay.active {
-      display: flex;
-    }
+    .modal-overlay.active { display: flex; }
 
     .modal {
       background: #1e293b;
@@ -228,32 +228,12 @@
       max-width: 340px;
       width: 90%;
       border: 2px solid #fbbf24;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
 
-    .modal-header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .modal-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
-
-    .modal-title {
-      font-size: 20px;
-      font-weight: bold;
-      color: #fbbf24;
-      margin-bottom: 8px;
-    }
-
-    .modal-message {
-      font-size: 16px;
-      color: #e5e7eb;
-      line-height: 1.5;
-      margin-bottom: 8px;
-    }
+    .modal-header { text-align: center; margin-bottom: 20px; }
+    .modal-icon { font-size: 48px; margin-bottom: 12px; }
+    .modal-title { font-size: 20px; font-weight: bold; color: #fbbf24; margin-bottom: 8px; }
+    .modal-message { font-size: 16px; color: #e5e7eb; line-height: 1.5; margin-bottom: 8px; }
 
     .modal-details {
       font-size: 14px;
@@ -264,46 +244,18 @@
       margin-top: 12px;
     }
 
-    .modal-buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 20px;
-    }
+    .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
 
     .modal-btn {
-      flex: 1;
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s;
+      flex: 1; border: none; border-radius: 12px;
+      padding: 14px; font-size: 16px; font-weight: bold; cursor: pointer;
     }
 
-    .modal-btn-confirm {
-      background: #dc2626;
-      color: white;
-    }
-
-    .modal-btn-confirm:active {
-      background: #b91c1c;
-      transform: scale(0.98);
-    }
-
-    .modal-btn-cancel {
-      background: #64748b;
-      color: white;
-    }
-
-    .modal-btn-cancel:active {
-      background: #475569;
-      transform: scale(0.98);
-    }
+    .modal-btn-confirm { background: #dc2626; color: white; }
+    .modal-btn-cancel { background: #64748b; color: white; }
 
     .progress-bar {
-      width: 100%;
-      height: 6px;
+      width: 100%; height: 6px;
       background: #0f172a;
       border-radius: 3px;
       overflow: hidden;
@@ -321,8 +273,18 @@
 <body>
 
   <div class="app">
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+      <div class="install-banner-text">
+        <strong>📲 Install SignSOS</strong>
+        Use as a real app on your phone
+      </div>
+      <button class="install-btn" id="installBtn">Install</button>
+      <button class="install-dismiss" id="dismissInstall">✕</button>
+    </div>
+
     <div class="app-header">
-      <div class="server-status server-offline" id="serverStatus">⚪ Checking...</div>
+      <div class="server-status server-checking" id="serverStatus">⚪ Connecting...</div>
       <h1>🚨 SignSOS</h1>
       <span>Emergency Sign Language Calling</span>
       <div class="location-badge" id="locationBadge">📍 Locating…</div>
@@ -355,7 +317,7 @@
     </div>
   </div>
 
-  <!-- Confirmation Modal -->
+  <!-- Modal -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -372,10 +334,10 @@
   </div>
 
   <script type="module">
-    import { HandLandmarker, FilesetResolver, DrawingUtils } from 
+    import { HandLandmarker, FilesetResolver, DrawingUtils } from
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 
-    // ========== DOM ELEMENTS ==========
+    // ========== DOM ==========
     const video = document.getElementById("camera");
     const canvas = document.getElementById("overlay");
     const ctx = canvas.getContext("2d");
@@ -406,18 +368,54 @@
     let pendingPrediction = false;
     const HOLD_TIME = 2000;
 
-    // ========== API CONFIG ==========
-    const API_URL = "http://127.0.0.1:5000";
+    // ========== API - AUTO DETECT ==========
+    const API_SERVERS = [
+      "http://127.0.0.1:5000",
+      // ADD YOUR RENDER URL HERE AFTER DEPLOYING:
+      // "https://your-app-name.onrender.com"
+    ];
+
+    let API_URL = API_SERVERS[0];
     let lastApiCall = 0;
     let lastPrediction = null;
-    const API_DELAY = 300; // ms between API calls
+    const API_DELAY = 300;
 
-    // ========== EMERGENCY CONFIG ==========
+    async function findBestServer() {
+      serverStatusEl.className = "server-status server-checking";
+      serverStatusEl.textContent = "🟡 Connecting...";
+
+      for (const url of API_SERVERS) {
+        try {
+          console.log("Trying:", url);
+          const r = await fetch(`${url}/health`, {
+            method: "GET",
+            signal: AbortSignal.timeout(4000)
+          });
+          const data = await r.json();
+          if (data.status === "ok" && data.model_loaded) {
+            API_URL = url;
+            serverOnline = true;
+            serverStatusEl.className = "server-status server-online";
+            serverStatusEl.textContent = url.includes("127.0.0.1")
+              ? "🟢 ML Local"
+              : "🟢 ML Cloud";
+            console.log("Using:", url);
+            return;
+          }
+        } catch (e) {
+          console.log("Failed:", url);
+        }
+      }
+
+      serverOnline = false;
+      serverStatusEl.className = "server-status server-offline";
+      serverStatusEl.textContent = "🔴 ML Offline";
+    }
+
+    // ========== CONFIG ==========
     const emergencyNumbers = {
       IN: { police: "100", ambulance: "108", fire: "101", universal: "112" },
       US: { police: "911", ambulance: "911", fire: "911", universal: "911" },
-      UK: { police: "999", ambulance: "999", fire: "999", universal: "112" },
-      EU: { police: "112", ambulance: "112", fire: "112", universal: "112" },
       DEFAULT: { police: "112", ambulance: "112", fire: "112", universal: "112" }
     };
 
@@ -426,45 +424,18 @@
     const aslGestures = {
       "TWO_PEOPLE_TRAPPED": { name: "Two People Trapped", service: "Fire", icon: "🔥" },
       "POSSIBLE_HOSTAGE": { name: "Possible Hostage Situation", service: "Police", icon: "🚔" },
+      "HOSTAGE": { name: "Hostage Situation", service: "Police", icon: "🚔" },
       "WEAPON_THREAT": { name: "Weapon Threat Detected", service: "Police", icon: "🔫" },
       "CALL_POLICE": { name: "Call Police", service: "Police", icon: "🚨" },
       "AMBULANCE": { name: "Medical Emergency", service: "Ambulance", icon: "🚑" },
       "HELP": { name: "Help Needed", service: "Police", icon: "🆘" },
       "STOP": { name: "Stop / Danger", service: "Police", icon: "✋" },
-      "HOSTAGE": { name: "Hostage Situation", service: "Police", icon: "🚔" },
       "OK": { name: "I'm Okay", service: "Universal", icon: "👌" },
       "NO": { name: "No / Negative Response", service: "Universal", icon: "❌" },
       "YES": { name: "Yes / Affirmative", service: "Universal", icon: "✅" }
     };
 
-    // ========== SERVER HEALTH CHECK ==========
-    async function checkServer() {
-      try {
-        const response = await fetch(`${API_URL}/health`, { 
-          method: "GET",
-          signal: AbortSignal.timeout(3000)
-        });
-        const data = await response.json();
-        serverOnline = data.status === "ok" && data.model_loaded;
-        
-        if (serverOnline) {
-          serverStatusEl.className = "server-status server-online";
-          serverStatusEl.textContent = "🟢 ML Online";
-        } else {
-          serverStatusEl.className = "server-status server-offline";
-          serverStatusEl.textContent = "🟡 No Model";
-        }
-      } catch (e) {
-        serverOnline = false;
-        serverStatusEl.className = "server-status server-offline";
-        serverStatusEl.textContent = "🔴 ML Offline";
-      }
-    }
-
-    // Check server every 5 seconds
-    setInterval(checkServer, 5000);
-
-    // ========== HELPER FUNCTIONS ==========
+    // ========== HELPERS ==========
     function updateEmergencyNumbers() {
       const nums = emergencyNumbers[region] || emergencyNumbers.DEFAULT;
       document.getElementById("policeNum").textContent = nums.police;
@@ -475,36 +446,44 @@
 
     function getEmergencyNumber(service) {
       const nums = emergencyNumbers[region] || emergencyNumbers.DEFAULT;
-      switch(service) {
-        case 'Police': return nums.police;
-        case 'Ambulance': return nums.ambulance;
-        case 'Fire': return nums.fire;
-        default: return nums.universal;
-      }
+      return nums[service.toLowerCase()] || nums.universal;
     }
 
     function speak(text) {
       if ('speechSynthesis' in window) {
         speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.volume = 1;
-        speechSynthesis.speak(utterance);
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.9;
+        speechSynthesis.speak(u);
       }
     }
 
-    // ========== ML PREDICTION (NON-BLOCKING) ==========
+    // ========== HEALTH CHECK ==========
+    async function checkServer() {
+      try {
+        const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(3000) });
+        const data = await r.json();
+        serverOnline = data.status === "ok" && data.model_loaded;
+        serverStatusEl.className = serverOnline
+          ? "server-status server-online"
+          : "server-status server-offline";
+        serverStatusEl.textContent = serverOnline
+          ? (API_URL.includes("127.0.0.1") ? "🟢 ML Local" : "🟢 ML Cloud")
+          : "🟡 No Model";
+      } catch (e) {
+        serverOnline = false;
+        serverStatusEl.className = "server-status server-offline";
+        serverStatusEl.textContent = "🔴 ML Offline";
+      }
+    }
+
+    setInterval(checkServer, 10000);
+
+    // ========== ML PREDICTION ==========
     async function predictGestureFromAPI(landmarks) {
       const now = Date.now();
-
-      // Throttle API calls
-      if (now - lastApiCall < API_DELAY || pendingPrediction) {
+      if (now - lastApiCall < API_DELAY || pendingPrediction || !serverOnline) {
         return lastPrediction;
-      }
-
-      if (!serverOnline) {
-        return null;
       }
 
       lastApiCall = now;
@@ -516,31 +495,16 @@
       }
 
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2000);
-
-        const response = await fetch(`${API_URL}/predict`, {
+        const r = await fetch(`${API_URL}/predict`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ landmarks: lmList }),
-          signal: controller.signal
+          signal: AbortSignal.timeout(2000)
         });
-
-        clearTimeout(timeout);
-        const data = await response.json();
-        
-        if (data.error) {
-          console.warn("API error:", data.error);
-          lastPrediction = null;
-        } else {
-          lastPrediction = data.gesture || null;
-        }
+        const data = await r.json();
+        lastPrediction = data.error ? null : (data.gesture || null);
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error("ML API error:", err.message);
-          // Don't mark server offline for single failures
-        }
-        // Keep last prediction on error
+        // keep last prediction
       } finally {
         pendingPrediction = false;
       }
@@ -548,15 +512,14 @@
       return lastPrediction;
     }
 
-    // ========== MEDIAPIPE INIT ==========
+    // ========== MEDIAPIPE ==========
     async function initializeHandLandmarker() {
       try {
         debugInfo.textContent = "Loading MediaPipe...";
-        
         const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
         );
-        
+
         handLandmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
@@ -571,230 +534,153 @@
 
         drawingUtils = new DrawingUtils(ctx);
         debugInfo.textContent = "✓ MediaPipe ready";
-        console.log("HandLandmarker initialized successfully");
       } catch (error) {
-        debugInfo.textContent = "MP Error: " + error.message;
-        console.error("Error initializing HandLandmarker:", error);
+        debugInfo.textContent = "Error: " + error.message;
       }
     }
 
-    // ========== MAIN DETECTION LOOP ==========
+    // ========== DETECTION LOOP ==========
     function predictWebcam() {
-      if (!handLandmarker) {
+      if (!handLandmarker || video.currentTime === lastVideoTime) {
         requestAnimationFrame(predictWebcam);
         return;
       }
 
-      const nowInMs = Date.now();
-      
-      if (video.currentTime === lastVideoTime) {
-        requestAnimationFrame(predictWebcam);
-        return;
-      }
-      
       lastVideoTime = video.currentTime;
-      
+
       let results;
       try {
-        results = handLandmarker.detectForVideo(video, nowInMs);
+        results = handLandmarker.detectForVideo(video, Date.now());
       } catch (e) {
-        console.error("Detection error:", e);
         requestAnimationFrame(predictWebcam);
         return;
       }
-      
-      // Clear canvas
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (results.landmarks && results.landmarks.length > 0) {
-        // Draw hand landmarks
-        for (const landmarks of results.landmarks) {
-          drawingUtils.drawConnectors(landmarks, HandLandmarker.HAND_CONNECTIONS, {
-            color: '#00FF00',
-            lineWidth: 2
+        for (const lm of results.landmarks) {
+          drawingUtils.drawConnectors(lm, HandLandmarker.HAND_CONNECTIONS, {
+            color: '#00FF00', lineWidth: 2
           });
-          drawingUtils.drawLandmarks(landmarks, {
-            color: '#FF0000',
-            lineWidth: 1,
-            radius: 3
+          drawingUtils.drawLandmarks(lm, {
+            color: '#FF0000', lineWidth: 1, radius: 3
           });
         }
 
-        // Send to ML API (fire-and-forget style with callback)
-        predictGestureFromAPI(results.landmarks[0]).then(detected => {
-          handleGestureResult(detected);
-        });
-
+        predictGestureFromAPI(results.landmarks[0]).then(handleGestureResult);
       } else {
-        // No hand detected
         if (currentGesture) {
           currentGesture = "";
           progressBar.style.display = 'none';
-          if (!confirmedGesture) {
-            statusText.textContent = "Waiting for sign input…";
-          }
+          if (!confirmedGesture) statusText.textContent = "Waiting for sign input…";
         }
-        debugInfo.textContent = serverOnline 
-          ? "No hand detected | ML: Online" 
-          : "No hand detected | ML: Offline";
+        debugInfo.textContent = serverOnline ? "No hand | ML: Online" : "No hand | ML: Offline";
       }
 
       requestAnimationFrame(predictWebcam);
     }
 
-    // ========== HANDLE GESTURE RESULT ==========
+    // ========== HANDLE RESULT ==========
     function handleGestureResult(detected) {
       if (!detected) return;
 
-      let normalized = detected.trim().toUpperCase().replace(/\s+/g, '_');
-      
-      // Debug
-      debugInfo.textContent = `ML: "${detected}" → "${normalized}" | ${serverOnline ? '🟢' : '🔴'}`;
+      const normalized = detected.trim().toUpperCase().replace(/\s+/g, '_');
+      debugInfo.textContent = `ML: "${normalized}" | ${serverOnline ? '🟢' : '🔴'}`;
 
-      if (!aslGestures[normalized]) {
-        // Unknown gesture from ML
-        debugInfo.textContent += " (unknown gesture)";
-        return;
-      }
+      if (!aslGestures[normalized]) return;
 
       const now = Date.now();
-      
+
       if (normalized === currentGesture) {
-        // Same gesture held
-        const holdDuration = now - gestureStartTime;
-        const progress = Math.min(100, (holdDuration / HOLD_TIME) * 100);
-        
+        const hold = now - gestureStartTime;
+        const progress = Math.min(100, (hold / HOLD_TIME) * 100);
+
         progressBar.style.display = 'block';
         progressFill.style.width = progress + '%';
-        
-        if (holdDuration >= HOLD_TIME && normalized !== confirmedGesture) {
-          // Gesture confirmed!
+
+        if (hold >= HOLD_TIME && normalized !== confirmedGesture) {
           confirmedGesture = normalized;
           const gesture = aslGestures[normalized];
           const number = getEmergencyNumber(gesture.service);
-          
           showConfirmationModal(gesture, number);
-          
-          debugInfo.textContent = `✅ ${normalized} CONFIRMED!`;
           progressBar.style.display = 'none';
         } else if (normalized !== confirmedGesture) {
-          statusText.innerHTML = `${aslGestures[normalized].icon} <span class="emergency-detected">${aslGestures[normalized].name}</span><br>Hold steady to confirm... ${progress.toFixed(0)}%`;
+          statusText.innerHTML = `${aslGestures[normalized].icon} <span class="emergency-detected">${aslGestures[normalized].name}</span><br>Hold steady... ${progress.toFixed(0)}%`;
         }
       } else {
-        // New gesture detected
         currentGesture = normalized;
         gestureStartTime = now;
-        confirmedGesture = ""; // Reset confirmation
+        confirmedGesture = "";
         progressBar.style.display = 'block';
         progressFill.style.width = '0%';
         statusText.innerHTML = `${aslGestures[normalized].icon} Detecting: ${aslGestures[normalized].name}<br>Hold for 2 seconds`;
       }
     }
 
-    // ========== CONFIRMATION MODAL ==========
+    // ========== MODAL ==========
     function showConfirmationModal(gesture, number) {
       currentEmergencyData = { gesture, number };
-      
       modalIcon.textContent = gesture.icon;
       modalTitle.textContent = "Confirm Emergency Call";
-      modalMessage.innerHTML = `
-        <strong>${gesture.name} detected</strong><br>
-        Calling ${gesture.service}: ${number}
-      `;
-      modalDetails.innerHTML = `
-        📍 ${userLocation.text}<br>
-        🕐 ${new Date().toLocaleTimeString()}
-      `;
-      
+      modalMessage.innerHTML = `<strong>${gesture.name} detected</strong><br>Calling ${gesture.service}: ${number}`;
+      modalDetails.innerHTML = `📍 ${userLocation.text}<br>🕐 ${new Date().toLocaleTimeString()}`;
       modalOverlay.classList.add('active');
       callBtn.disabled = false;
       callBtn.textContent = `📞 Call ${gesture.service} ${number}`;
-      
-      statusText.innerHTML = `
-        ${gesture.icon} <span class="emergency-detected">${gesture.name} confirmed!</span><br>
-        → Ready to call ${gesture.service} ${number}
-      `;
-      
-      speak(`${gesture.name} detected. Ready to call ${gesture.service} at ${number}. Tap confirm to proceed.`);
+      speak(`${gesture.name} detected. Tap confirm to call ${gesture.service}.`);
     }
 
-    // Cancel
     btnCancel.addEventListener('click', () => {
       modalOverlay.classList.remove('active');
       confirmedGesture = "";
       currentGesture = "";
       currentEmergencyData = null;
-      statusText.textContent = "Call cancelled. Make another sign.";
+      statusText.textContent = "Call cancelled.";
       callBtn.disabled = true;
       callBtn.textContent = "📞 Make Emergency Sign";
       speak("Call cancelled");
     });
 
-    // Confirm call
     btnConfirm.addEventListener('click', () => {
       if (!currentEmergencyData) return;
-      
       const { gesture, number } = currentEmergencyData;
       modalOverlay.classList.remove('active');
-      
-      statusText.innerHTML = `
-        ${gesture.icon} <span class="emergency-detected">CALLING ${gesture.service.toUpperCase()}</span><br>
-        📞 Dialing ${number}...<br>
-        📍 Location: ${userLocation.text}
-      `;
-      
-      speak(`Calling ${gesture.service} at ${number}. Your location has been sent.`);
-      
-      // In production: window.location.href = `tel:${number}`;
+
+      statusText.innerHTML = `${gesture.icon} <span class="emergency-detected">CALLING ${gesture.service.toUpperCase()}</span><br>📞 Dialing ${number}...`;
+      speak(`Calling ${gesture.service} at ${number}.`);
+
+      // Actually dial the number on mobile
+      window.location.href = `tel:${number}`;
+
       setTimeout(() => {
-        alert(
-          `Emergency Call Initiated\n\n` +
-          `Service: ${gesture.service}\n` +
-          `Number: ${number}\n` +
-          `Sign: ${gesture.name}\n` +
-          `Location: ${userLocation.text}\n\n` +
-          `In production, this dials ${number} automatically.`
-        );
-        
         confirmedGesture = "";
         currentGesture = "";
         currentEmergencyData = null;
         callBtn.disabled = true;
         callBtn.textContent = "📞 Make Emergency Sign";
-        statusText.textContent = "Call completed. Make another sign if needed.";
-      }, 2000);
+        statusText.textContent = "Call initiated. Make another sign if needed.";
+      }, 3000);
     });
 
-    // Manual call button
     callBtn.addEventListener('click', () => {
       if (currentEmergencyData) btnConfirm.click();
     });
 
-    // ========== GEOLOCATION ==========
+    // ========== LOCATION ==========
     function getLocation() {
       if (!("geolocation" in navigator)) return;
-      
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          userLocation = {
-            lat: latitude,
-            lng: longitude,
-            text: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-          };
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          userLocation = { lat: latitude, lng: longitude, text: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` };
           document.getElementById("locationBadge").textContent = `📍 ${userLocation.text}`;
-          
           if (latitude >= 8 && latitude <= 37 && longitude >= 68 && longitude <= 97) region = "IN";
           else if (latitude >= 24 && latitude <= 49 && longitude >= -125 && longitude <= -66) region = "US";
-          else if (latitude >= 50 && latitude <= 59 && longitude >= -8 && longitude <= 2) region = "UK";
-          else region = "EU";
-          
+          else region = "DEFAULT";
           updateEmergencyNumbers();
         },
-        () => {
-          document.getElementById("locationBadge").textContent = "📍 Location unavailable";
-          userLocation.text = "Location unavailable";
-        }
+        () => { document.getElementById("locationBadge").textContent = "📍 Unavailable"; }
       );
     }
 
@@ -802,12 +688,10 @@
     async function enableCam() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: 640, height: 480 },
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
           audio: false
         });
-        
         video.srcObject = stream;
-        
         return new Promise((resolve) => {
           video.addEventListener("loadeddata", () => {
             canvas.width = video.videoWidth;
@@ -817,36 +701,50 @@
         });
       } catch (error) {
         debugInfo.textContent = "Camera error: " + error.message;
-        console.error("Camera error:", error);
       }
+    }
+
+    // ========== PWA INSTALL ==========
+    let deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBanner').classList.add('show');
+    });
+
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('installBanner').classList.remove('show');
+    });
+
+    document.getElementById('dismissInstall').addEventListener('click', () => {
+      document.getElementById('installBanner').classList.remove('show');
+    });
+
+    // ========== SERVICE WORKER ==========
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.log('SW error:', err));
     }
 
     // ========== INIT ==========
     async function init() {
-      console.log("🚨 SignSOS Initializing...");
-      
+      console.log("🚨 SignSOS Starting...");
       updateEmergencyNumbers();
-      
-      // Check server first
-      await checkServer();
-      
-      // Init MediaPipe
+      await findBestServer();
       await initializeHandLandmarker();
-      
-      // Start camera
       await enableCam();
-      
-      // Start detection loop
       predictWebcam();
-      
-      // Get location
       getLocation();
-      
-      console.log("✅ SignSOS Ready!");
+      console.log("✅ Ready!");
     }
 
     init();
   </script>
-
 </body>
 </html>
