@@ -397,61 +397,56 @@
 
     // ASL Emergency Gestures with proper descriptions
     const aslGestures = {
-  "TWO_PEOPLE_TRAPPED": {
-    name: "Two People Trapped",
-    service: "Fire",
-    icon: "🔥"
-  },
+      'HELP': {
+        name: 'HELP',
+        service: 'Police',
+        icon: '🆘',
+        description: 'Fist on open palm moving upward'
+      },
+      'POLICE': {
+        name: 'POLICE',
+        service: 'Police',
+        icon: '👮',
+        description: 'C-shape tapping chest (badge area)'
+      },
+      'AMBULANCE': {
+        name: 'AMBULANCE',
+        service: 'Ambulance',
+        icon: '🚑',
+        description: 'Pulse check motion at wrist'
+      },
+      'FIRE': {
+        name: 'FIRE',
+        service: 'Fire',
+        icon: '🔥',
+        description: 'Wiggling fingers upward (flames)'
+      },
+      'DANGER': {
+        name: 'DANGER',
+        service: 'Police',
+        icon: '⚠️',
+        description: 'Closed fist'
+      },
+      'HURT': {
+        name: 'HURT',
+        service: 'Ambulance',
+        icon: '🤕',
+        description: 'Index fingers pointing at each other'
+      },
+      'SICK': {
+        name: 'SICK',
+        service: 'Ambulance',
+        icon: '🤒',
+        description: 'Middle finger on forehead'
+      },
+      'EMERGENCY': {
+        name: 'EMERGENCY',
+        service: 'Universal',
+        icon: '🚨',
+        description: 'Shaking E-handshape'
+      }
+    };
 
-  "POSSIBLE_HOSTAGE": {
-    name: "Possible Hostage Situation",
-    service: "Police",
-    icon: "🚔"
-  },
-
-  "WEAPON_THREAT": {
-    name: "Weapon Threat Detected",
-    service: "Police",
-    icon: "🔫"
-  },
-
-  "CALL_POLICE": {
-    name: "Call Police",
-    service: "Police",
-    icon: "🚨"
-  },
-
-  "AMBULANCE": {
-    name: "Medical Emergency",
-    service: "Ambulance",
-    icon: "🚑"
-  },
-
-  "HELP": {
-    name: "Help Needed",
-    service: "Police",
-    icon: "🆘"
-  },
-
-  "STOP": {
-    name: "Stop / Danger",
-    service: "Police",
-    icon: "✋"
-  },
-
-  "OK": {
-    name: "I'm Okay",
-    service: "Universal",
-    icon: "👌"
-  },
-
-  "NO": {
-    name: "No / Negative Response",
-    service: "Universal",
-    icon: "❌"
-  }
-};
-  window.aslGestures = aslGestures;
     // Update emergency numbers display
     function updateEmergencyNumbers() {
       const nums = emergencyNumbers[region] || emergencyNumbers.DEFAULT;
@@ -626,43 +621,6 @@
         console.error("Error initializing HandLandmarker:", error);
       }
     }
-    
-      let lastApiCall = 0;
-let lastPrediction = null;
-const API_DELAY = 250;
-
-async function predictGestureFromPython(landmarks) {
-  const now = Date.now();
-
-  if (now - lastApiCall < API_DELAY) {
-    return lastPrediction; // ✅ reuse last result
-  }
-
-  lastApiCall = now;
-
-  const lmList = [];
-  for (const p of landmarks) {
-    lmList.push(p.x, p.y);
-  }
-
-  try {
-    const response = await fetch("http://127.0.0.1:5000/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ landmarks: lmList })
-    });
-
-    const data = await response.json();
-    lastPrediction = data.gesture || null;
-    return lastPrediction;
-  } catch (err) {
-    console.error("ML API error:", err);
-    return lastPrediction;
-  }
-}
-
-
-
 
     // Process video frame
     async function predictWebcam() {
@@ -692,24 +650,12 @@ async function predictGestureFromPython(landmarks) {
           }
 
           // Detect ASL gesture
-          // const detected = detectASLGesture(results.landmarks);
-          const detected = await predictGestureFromPython(results.landmarks[0]);
-          console.log("RAW ML OUTPUT →", JSON.stringify(detected));
-          console.log("ML detected:", detected);
-          let normalized = null;
-
-if (typeof detected === "string") {
-  normalized = detected.trim().toUpperCase();
-}
-
-console.log("NORMALIZED →", normalized);
-
-          if (normalized && aslGestures[normalized]) {
-
+          const detected = detectASLGesture(results.landmarks);
+          
+          if (detected && aslGestures[detected]) {
             const now = Date.now();
             
-            if (normalized === currentGesture) {
-
+            if (detected === currentGesture) {
               // Same gesture held
               const holdDuration = now - gestureStartTime;
               const progress = Math.min(100, (holdDuration / HOLD_TIME) * 100);
@@ -717,11 +663,9 @@ console.log("NORMALIZED →", normalized);
               progressBar.style.display = 'block';
               progressFill.style.width = progress + '%';
               
-              if (holdDuration >= HOLD_TIME && normalized !== confirmedGesture) {
-                confirmedGesture = normalized;
-
-                const gesture = aslGestures[normalized];
-
+              if (holdDuration >= HOLD_TIME && detected !== confirmedGesture) {
+                confirmedGesture = detected;
+                const gesture = aslGestures[detected];
                 const number = getEmergencyNumber(gesture.service);
                 
                 // Show confirmation modal
@@ -731,17 +675,16 @@ console.log("NORMALIZED →", normalized);
                 progressBar.style.display = 'none';
               } else {
                 debugInfo.textContent = `Hold ${detected}: ${progress.toFixed(0)}%`;
-                statusText.innerHTML = `${aslGestures[normalized].icon} <span class="emergency-detected">${normalized} sign detected</span><br>Hold steady to confirm...`;
+                statusText.innerHTML = `${aslGestures[detected].icon} <span class="emergency-detected">${detected} sign detected</span><br>Hold steady to confirm...`;
               }
             } else {
               // New gesture detected
-              currentGesture = normalized;
-
+              currentGesture = detected;
               gestureStartTime = now;
               progressBar.style.display = 'block';
               progressFill.style.width = '0%';
-              debugInfo.textContent = `Detecting: ${normalized}...`;
-              statusText.innerHTML = `${aslGestures[normalized].icon} Detecting ${normalized}...<br>Hold for 2 seconds`;
+              debugInfo.textContent = `Detecting: ${detected}...`;
+              statusText.innerHTML = `${aslGestures[detected].icon} Detecting ${detected}...<br>Hold for 2 seconds`;
             }
           } else {
             if (currentGesture) {
@@ -765,8 +708,6 @@ console.log("NORMALIZED →", normalized);
       }
 
       requestAnimationFrame(predictWebcam);
-      
-
     }
 
     // Show confirmation modal
